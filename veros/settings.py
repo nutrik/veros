@@ -146,6 +146,7 @@ SETTINGS = {
     "Prandtl_tke0": Setting(
         10.0, float, "Constant Prandtl number when stratification is neglected for kappaH computation in TKE routine"
     ),
+    "enable_atmospheric_coupling": Setting(False, bool, "Couple Veros with external atmospheric model"),
 }
 
 

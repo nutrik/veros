@@ -87,15 +87,23 @@ class GlobalFourDegreeSetup(VerosSetup):
 
         settings.eq_of_state_type = 5
 
+        settings.enable_atmospheric_coupling = True
+
         # custom variables
-        state.dimensions["nmonths"] = 12
+        if settings.enable_atmospheric_coupling:
+            DIMS = ("xt", "yt")
+        else:
+            DIMS = ("xt", "yt", "nmonths")
+            state.dimensions["nmonths"] = 12
         state.var_meta.update(
-            sss_clim=Variable("sss_clim", ("xt", "yt", "nmonths"), "", "", time_dependent=False),
-            sst_clim=Variable("sst_clim", ("xt", "yt", "nmonths"), "", "", time_dependent=False),
-            qnec=Variable("qnec", ("xt", "yt", "nmonths"), "", "", time_dependent=False),
-            qnet=Variable("qnet", ("xt", "yt", "nmonths"), "", "", time_dependent=False),
-            taux=Variable("taux", ("xt", "yt", "nmonths"), "", "", time_dependent=False),
-            tauy=Variable("tauy", ("xt", "yt", "nmonths"), "", "", time_dependent=False),
+            taux=Variable("taux", DIMS, "", "", time_dependent=False),
+            tauy=Variable("tauy", DIMS, "", "", time_dependent=False),
+            temp_flux=Variable("temp_flux", DIMS, "", "", time_dependent=False),
+            surf_salt=Variable("surf_salt", DIMS, "", "", time_dependent=False),
+            sss_clim=Variable("sss_clim", DIMS, "", "", time_dependent=False),
+            sst_clim=Variable("sst_clim", DIMS, "", "", time_dependent=False),
+            qnec=Variable("qnec", DIMS, "", "", time_dependent=False),
+            qnet=Variable("qnet", DIMS, "", "", time_dependent=False),
         )
 
     def _read_forcing(self, var):
@@ -168,29 +176,30 @@ class GlobalFourDegreeSetup(VerosSetup):
             vs.salt, at[2:-2, 2:-2, :, :2], salt_data[..., npx.newaxis] * vs.maskT[2:-2, 2:-2, :, npx.newaxis]
         )
 
-        # use Trenberth wind stress from MITgcm instead of ECMWF (also contained in ecmwf_4deg.cdf)
-        vs.taux = update(vs.taux, at[2:-2, 2:-2, :], self._read_forcing("tau_x"))
-        vs.tauy = update(vs.tauy, at[2:-2, 2:-2, :], self._read_forcing("tau_y"))
+        if not settings.enable_atmospheric_coupling:
+            # use Trenberth wind stress from MITgcm instead of ECMWF (also contained in ecmwf_4deg.cdf)
+            vs.taux = update(vs.taux, at[2:-2, 2:-2, :], self._read_forcing("tau_x"))
+            vs.tauy = update(vs.tauy, at[2:-2, 2:-2, :], self._read_forcing("tau_y"))
 
-        # heat flux
-        with h5netcdf.File(DATA_FILES["ecmwf"], "r") as ecmwf_data:
-            qnec_var = ecmwf_data.variables["Q3"]
-            vs.qnec = update(vs.qnec, at[2:-2, 2:-2, :], npx.array(qnec_var).T)
-            vs.qnec = npx.where(vs.qnec <= -1e10, 0.0, vs.qnec)
+            # heat flux
+            with h5netcdf.File(DATA_FILES["ecmwf"], "r") as ecmwf_data:
+                qnec_var = ecmwf_data.variables["Q3"]
+                vs.qnec = update(vs.qnec, at[2:-2, 2:-2, :], npx.array(qnec_var).T)
+                vs.qnec = npx.where(vs.qnec <= -1e10, 0.0, vs.qnec)
 
-        q = self._read_forcing("q_net")
-        vs.qnet = update(vs.qnet, at[2:-2, 2:-2, :], -q)
-        vs.qnet = npx.where(vs.qnet <= -1e10, 0.0, vs.qnet)
+            q = self._read_forcing("q_net")
+            vs.qnet = update(vs.qnet, at[2:-2, 2:-2, :], -q)
+            vs.qnet = npx.where(vs.qnet <= -1e10, 0.0, vs.qnet)
 
-        mean_flux = (
-            npx.sum(vs.qnet[2:-2, 2:-2, :] * vs.area_t[2:-2, 2:-2, npx.newaxis]) / 12 / npx.sum(vs.area_t[2:-2, 2:-2])
-        )
-        logger.info(" removing an annual mean heat flux imbalance of %e W/m^2" % mean_flux)
-        vs.qnet = (vs.qnet - mean_flux) * vs.maskT[:, :, -1, npx.newaxis]
+            mean_flux = (
+                npx.sum(vs.qnet[2:-2, 2:-2, :] * vs.area_t[2:-2, 2:-2, npx.newaxis]) / 12 / npx.sum(vs.area_t[2:-2, 2:-2])
+            )
+            logger.info(" removing an annual mean heat flux imbalance of %e W/m^2" % mean_flux)
+            vs.qnet = (vs.qnet - mean_flux) * vs.maskT[:, :, -1, npx.newaxis]
 
-        # SST and SSS
-        vs.sst_clim = update(vs.sst_clim, at[2:-2, 2:-2, :], self._read_forcing("sst"))
-        vs.sss_clim = update(vs.sss_clim, at[2:-2, 2:-2, :], self._read_forcing("sss"))
+            # SST and SSS
+            vs.sst_clim = update(vs.sst_clim, at[2:-2, 2:-2, :], self._read_forcing("sst"))
+            vs.sss_clim = update(vs.sss_clim, at[2:-2, 2:-2, :], self._read_forcing("sss"))
 
         if settings.enable_idemix:
             vs.forc_iw_bottom = update(
@@ -203,7 +212,11 @@ class GlobalFourDegreeSetup(VerosSetup):
     @veros_routine
     def set_forcing(self, state):
         vs = state.variables
-        vs.update(set_forcing_kernel(state))
+        settings = state.settings
+        if settings.enable_atmospheric_coupling:
+            vs.update(set_forcing_kernel_atm(state))
+        else:
+            vs.update(set_forcing_kernel(state))
 
     @veros_routine
     def set_diagnostics(self, state):
@@ -222,6 +235,44 @@ class GlobalFourDegreeSetup(VerosSetup):
     def after_timestep(self, state):
         pass
 
+@veros_kernel
+def set_forcing_kernel_atm(state):
+    vs = state.variables
+    settings = state.settings
+
+    # wind stress
+    vs.surface_taux = vs.taux[:, :]
+    vs.surface_tauy = vs.tauy[:, :]
+
+    # tke flux
+    if settings.enable_tke:
+        vs.forc_tke_surface = update(
+            vs.forc_tke_surface,
+            at[1:-1, 1:-1],
+            npx.sqrt(
+                (0.5 * (vs.surface_taux[1:-1, 1:-1] + vs.surface_taux[:-2, 1:-1]) / settings.rho_0) ** 2
+                + (0.5 * (vs.surface_tauy[1:-1, 1:-1] + vs.surface_tauy[1:-1, :-2]) / settings.rho_0) ** 2
+            )
+            ** 1.5,
+        )
+    # heat flux : m K / s
+    vs.forc_temp_surface = vs.temp_flux * vs.maskT[:, :, -1]
+
+    # salinity flux: g/kg m / s
+    vs.forc_salt_surface = vs.surf_salt * vs.maskT[:, :, -1]
+
+    # apply simple ice mask
+    mask = npx.logical_and(vs.temp[:, :, -1, vs.tau] * vs.maskT[:, :, -1] < -1.8, vs.forc_temp_surface < 0.0)
+    vs.forc_temp_surface = npx.where(mask, 0.0, vs.forc_temp_surface)
+    vs.forc_salt_surface = npx.where(mask, 0.0, vs.forc_salt_surface)
+
+    return KernelOutput(
+        surface_taux=vs.surface_taux,
+        surface_tauy=vs.surface_tauy,
+        forc_tke_surface=vs.forc_tke_surface,
+        forc_temp_surface=vs.forc_temp_surface,
+        forc_salt_surface=vs.forc_salt_surface,
+    )
 
 @veros_kernel
 def set_forcing_kernel(state):
