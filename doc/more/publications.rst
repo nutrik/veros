@@ -4,6 +4,12 @@ Some publications involving Veros
 Peer-reviewed articles
 ----------------------
 
+- Meunier, E., Ouala, S., Frezat, H., Le Sommer, J., Fablet, R. (2025).
+  Towards fully differentiable neural ocean model with Veros. arXiv:2511.17427 [cs.LG]
+  `https://doi.org/10.48550/arXiv.2511.17427 <https://doi.org/10.48550/arXiv.2511.17427>`__
+- Roquet, F., Bell, M.J., de Boer, A.M., Ferreira, D., Jones, C. S., LaCasce, J. H., de Lavergne, C., Marshall, D. P., Munday, D. R., Nycander, J., Ödalen, M. (2025).
+  Controls of the global overturning circulation of the ocean. NPJ Clim. Atmos. Sci. 8, 304.
+  `https://doi.org/10.1038/s41612-025-01185-8 <https://doi.org/10.1038/s41612-025-01185-8>`__
 - Mrozowska, M. A., Avery, J., Stoustrup, A., Nuterman, R., Johnsen, C.-J., Thormann, A., & Jochum, M. (2025).
   Bayesian optimization with GPU acceleration for ocean models. Journal of Geophysical Research: Machine Learning and Computation, 2, e2024JH000517.
   `https://doi.org/10.1029/2024JH000517 <https://doi.org/10.1029/2024JH000517>`__
