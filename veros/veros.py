@@ -130,7 +130,10 @@ class VerosSetup(metaclass=abc.ABCMeta):
         Called before every time step to update the external forcing, e.g. through
         :attr:`forc_temp_surface`, :attr:`forc_salt_surface`, :attr:`surface_taux`,
         :attr:`surface_tauy`, :attr:`forc_tke_surface`, :attr:`temp_source`, or
-        :attr:`salt_source`. Use this method to implement time-dependent forcing.
+        :attr:`salt_source`. With :attr:`enable_surface_freshwater_flux`, providers
+        instead set :attr:`surface_freshwater_flux` and :attr:`surface_salt_flux`
+        as mass fluxes positive into the ocean. Use this method to implement
+        time-dependent forcing.
 
         Example:
           >>> @veros_method
