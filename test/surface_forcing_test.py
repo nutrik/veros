@@ -2,6 +2,21 @@ import numpy as onp
 import pytest
 
 
+def _cesm_like_coupled_provider(precipitation, evaporation, melt, runoff, ice_runoff, sea_ice_salt):
+    """Aggregate already-remapped CESM-like component fluxes on the Veros T grid.
+
+    The five freshwater inputs correspond to POP's ``PREC_F``, ``EVAP_F``,
+    ``MELT_F``, ``ROFF_F``, and ``IOFF_F``. Direct sea-ice salt exchange
+    corresponds to ``SALT_F`` and stays separate because it is salt mass rather
+    than water mass. All inputs use kg / m^2 / s and are positive into the
+    ocean.
+    """
+    return {
+        "surface_freshwater_flux": precipitation + evaporation + melt + runoff + ice_runoff,
+        "surface_salt_flux": sea_ice_salt,
+    }
+
+
 @pytest.fixture
 def diskless_mode():
     from veros import runtime_settings
@@ -19,7 +34,7 @@ def _make_state(enable_surface_freshwater_flux):
     from veros.state import VerosState
     from veros.variables import DIM_TO_SHAPE_VAR, VARIABLES
 
-    state = VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR)
+    state = VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR.copy())
     try:
         with state.settings.unlock():
             state.settings.nx = 2
@@ -95,6 +110,61 @@ def test_surface_mask_removes_flux_over_land():
     )
 
     onp.testing.assert_allclose(actual, [[-0.035, 0.0]])
+
+
+def test_cesm_like_provider_supplies_separate_conditional_t_grid_fluxes():
+    """Exercise provider aggregation and Veros conversion in one realistic toy case."""
+    from veros.core.operators import at, numpy as npx, update
+    from veros.core.surface_forcing import set_surface_freshwater_flux
+
+    state = _make_state(enable_surface_freshwater_flux=True)
+    template = state.variables.surface_freshwater_flux
+
+    def t_grid_field(wet_values):
+        return update(npx.zeros_like(template), at[2:4, 2], npx.array(wet_values))
+
+    # Cell 1 is rainy and thawing. Cell 2 is dry and freezing. In CESM,
+    # precipitation includes rain and snow, runoff is liquid, and ice runoff is
+    # non-negative frozen runoff from the runoff router. Sea-ice melt/freezing
+    # and its carried salt can have either sign.
+    provider_fields = _cesm_like_coupled_provider(
+        precipitation=t_grid_field([2.0e-5, 0.2e-5]),
+        evaporation=t_grid_field([-0.5e-5, -1.4e-5]),
+        melt=t_grid_field([0.3e-5, -0.5e-5]),
+        runoff=t_grid_field([0.6e-5, 0.0]),
+        ice_runoff=t_grid_field([0.1e-5, 0.0]),
+        sea_ice_salt=t_grid_field([1.2e-8, -2.0e-8]),
+    )
+
+    surface_mask = update(npx.zeros_like(state.variables.maskT), at[2:4, 2, :], True)
+    with state.variables.unlock():
+        state.variables.maskT = surface_mask
+        state.variables.surface_freshwater_flux = provider_fields["surface_freshwater_flux"]
+        state.variables.surface_salt_flux = provider_fields["surface_salt_flux"]
+
+    assert state.var_meta["surface_freshwater_flux"].dims == ("xt", "yt")
+    assert state.var_meta["surface_salt_flux"].dims == ("xt", "yt")
+    assert state.variables.surface_freshwater_flux.shape == state.variables.maskT[:, :, -1].shape
+    onp.testing.assert_allclose(state.variables.surface_freshwater_flux[2:4, 2], [2.5e-5, -1.7e-5])
+    onp.testing.assert_allclose(state.variables.surface_salt_flux[2:4, 2], [1.2e-8, -2.0e-8])
+
+    actual = set_surface_freshwater_flux(state).forc_salt_surface
+
+    # Freshwater into the ocean freshens (negative); evaporation and freezing
+    # salinify (positive). Direct salt exchange modifies, but does not replace,
+    # the virtual-salt-flux contribution.
+    onp.testing.assert_allclose(actual[2:4, 2], [-8.5578125e-7, 5.7036875e-7])
+    assert onp.count_nonzero(actual) == 2
+
+
+def test_surface_freshwater_flux_inputs_are_veros_only_for_pyom():
+    from veros.pyom_compat import VEROS_TO_PYOM_SETTING, VEROS_TO_PYOM_VAR
+
+    assert VEROS_TO_PYOM_SETTING["rho_freshwater"] is None
+    assert VEROS_TO_PYOM_SETTING["surface_salinity_reference"] is None
+    assert VEROS_TO_PYOM_SETTING["enable_surface_freshwater_flux"] is None
+    assert VEROS_TO_PYOM_VAR["surface_freshwater_flux"] is None
+    assert VEROS_TO_PYOM_VAR["surface_salt_flux"] is None
 
 
 def test_enabled_coupled_flux_replaces_setup_supplied_salinity_flux():

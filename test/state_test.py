@@ -8,7 +8,7 @@ def dummy_state():
     from veros.variables import VARIABLES, DIM_TO_SHAPE_VAR
     from veros.settings import SETTINGS
 
-    return VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR)
+    return VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR.copy())
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def dummy_variables():
     from veros.variables import VARIABLES, DIM_TO_SHAPE_VAR
     from veros.settings import SETTINGS
 
-    dummy_state = VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR)
+    dummy_state = VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR.copy())
     dummy_state.initialize_variables()
     return dummy_state.variables
 
@@ -114,6 +114,7 @@ def test_set_dimension(dummy_state):
 
 def test_resize_dimension(dummy_state):
     from veros.state import resize_dimension
+    from veros.variables import DIM_TO_SHAPE_VAR
 
     with dummy_state.settings.unlock():
         dummy_state.settings.nx = 10
@@ -127,6 +128,7 @@ def test_resize_dimension(dummy_state):
 
     assert dummy_state.dimensions["xt"] == 100
     assert dummy_state.variables.dxt.shape == (104,)
+    assert DIM_TO_SHAPE_VAR["xt"] == "nx"
 
 
 def test_timers(dummy_state):

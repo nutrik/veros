@@ -34,8 +34,6 @@ SETTINGS = {
     "degtom": Setting(6370e3 / 180.0 * PI, float, "Conversion factor from degrees latitude to meters"),
     "omega": Setting(PI / 43082.0, float, "Earth rotation frequency in 1/s"),
     "rho_0": Setting(1024.0, float, "Boussinesq reference density in :math:`kg/m^3`"),
-    "rho_freshwater": Setting(1000.0, float, "Freshwater density in :math:`kg/m^3`"),
-    "surface_salinity_reference": Setting(34.7, float, "Reference salinity for virtual salt flux in :math:`g/kg`"),
     "grav": Setting(9.81, float, "Gravitational constant in :math:`m/s^2`"),
     # Logical switches for general model setup
     "coord_degree": Setting(False, bool, "either spherical (True) or cartesian (False) coordinates"),
@@ -53,7 +51,6 @@ SETTINGS = {
     "enable_bottom_friction_var": Setting(False, bool, "enable bottom friction with lateral variations"),
     "enable_quadratic_bottom_friction": Setting(False, bool, "enable quadratic bottom friction"),
     "enable_tempsalt_sources": Setting(False, bool, "enable restoring zones, etc"),
-    "enable_surface_freshwater_flux": Setting(False, bool, "convert surface freshwater input to virtual salt flux"),
     "enable_momentum_sources": Setting(False, bool, "enable restoring zones, etc"),
     "enable_superbee_advection": Setting(False, bool, "enable advection scheme with implicit mixing"),
     "enable_conserve_energy": Setting(True, bool, "exchange energy consistently"),
@@ -149,6 +146,10 @@ SETTINGS = {
     "Prandtl_tke0": Setting(
         10.0, float, "Constant Prandtl number when stratification is neglected for kappaH computation in TKE routine"
     ),
+    # Coupled surface freshwater forcing
+    "rho_freshwater": Setting(1000.0, float, "Freshwater density in :math:`kg/m^3`"),
+    "surface_salinity_reference": Setting(34.7, float, "Reference salinity for virtual salt flux in :math:`g/kg`"),
+    "enable_surface_freshwater_flux": Setting(False, bool, "convert surface freshwater input to virtual salt flux"),
 }
 
 
