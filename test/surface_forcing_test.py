@@ -5,6 +5,38 @@ import pytest
 def _cesm_like_coupled_provider(precipitation, evaporation, melt, runoff, ice_runoff, sea_ice_salt):
     """Aggregate already-remapped CESM-like component fluxes on the Veros T grid.
 
+    .. list-table:: CESM-to-Veros provider component mapping
+       :header-rows: 1
+
+       * - Provider component
+         - Positive contribution
+         - Negative contribution
+         - Veros field
+       * - Atmospheric precipitation
+         - Rain/snow entering ocean
+         - Not applicable
+         - ``surface_freshwater_flux``
+       * - Evaporation
+         - Not applicable
+         - Water leaving ocean
+         - ``surface_freshwater_flux``
+       * - Sea-ice melt/freezing
+         - Meltwater entering ocean
+         - Freezing removes water
+         - ``surface_freshwater_flux``
+       * - Liquid runoff
+         - Land runoff entering ocean
+         - Normally disallowed
+         - ``surface_freshwater_flux``
+       * - Frozen/ice runoff
+         - Frozen runoff entering ocean
+         - Normally disallowed
+         - ``surface_freshwater_flux``
+       * - Sea-ice salt exchange
+         - Salt entering ocean
+         - Salt retained by forming ice
+         - ``surface_salt_flux``
+
     The five freshwater inputs correspond to POP's ``PREC_F``, ``EVAP_F``,
     ``MELT_F``, ``ROFF_F``, and ``IOFF_F``. Direct sea-ice salt exchange
     corresponds to ``SALT_F`` and stays separate because it is salt mass rather
