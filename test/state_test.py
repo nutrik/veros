@@ -85,6 +85,16 @@ def test_to_xarray(dummy_state):
         assert var in ds
 
 
+def test_salinity_tendency_diagnostics_export_salinity_units(dummy_state):
+    pytest.importorskip("xarray")
+
+    dummy_state.initialize_variables()
+    ds = dummy_state.to_xarray()
+
+    for var_name in ("dsalt_vmix", "dsalt_hmix", "dsalt_iso"):
+        assert ds[var_name].attrs["units"] == "g/(kg s)"
+
+
 def test_variable_init(dummy_state):
     with pytest.raises(RuntimeError):
         dummy_state.variables

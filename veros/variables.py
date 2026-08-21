@@ -360,13 +360,13 @@ VARIABLES = {
     "dsalt_vmix": Variable(
         "Change of sal. by vertical mixing",
         T_GRID,
-        "deg C/s",
+        "g/(kg s)",
         "Change of salinity due to vertical mixing",
     ),
     "dsalt_hmix": Variable(
         "Change of sal. by horizontal mixing",
         T_GRID,
-        "deg C/s",
+        "g/(kg s)",
         "Change of salinity due to horizontal mixing",
     ),
     "dtemp_iso": Variable(
@@ -378,7 +378,7 @@ VARIABLES = {
     "dsalt_iso": Variable(
         "Change of sal. by isop. mixing",
         T_GRID,
-        "deg C/s",
+        "g/(kg s)",
         "Change of salinity due to isopycnal mixing plus skew mixing",
     ),
     "forc_temp_surface": Variable(
