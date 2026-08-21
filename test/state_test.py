@@ -8,7 +8,7 @@ def dummy_state():
     from veros.variables import VARIABLES, DIM_TO_SHAPE_VAR
     from veros.settings import SETTINGS
 
-    return VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR)
+    return VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR.copy())
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def dummy_variables():
     from veros.variables import VARIABLES, DIM_TO_SHAPE_VAR
     from veros.settings import SETTINGS
 
-    dummy_state = VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR)
+    dummy_state = VerosState(VARIABLES, SETTINGS, DIM_TO_SHAPE_VAR.copy())
     dummy_state.initialize_variables()
     return dummy_state.variables
 
@@ -85,6 +85,16 @@ def test_to_xarray(dummy_state):
         assert var in ds
 
 
+def test_salinity_tendency_diagnostics_export_salinity_units(dummy_state):
+    pytest.importorskip("xarray")
+
+    dummy_state.initialize_variables()
+    ds = dummy_state.to_xarray()
+
+    for var_name in ("dsalt_vmix", "dsalt_hmix", "dsalt_iso"):
+        assert ds[var_name].attrs["units"] == "g/(kg s)"
+
+
 def test_variable_init(dummy_state):
     with pytest.raises(RuntimeError):
         dummy_state.variables
@@ -114,6 +124,7 @@ def test_set_dimension(dummy_state):
 
 def test_resize_dimension(dummy_state):
     from veros.state import resize_dimension
+    from veros.variables import DIM_TO_SHAPE_VAR
 
     with dummy_state.settings.unlock():
         dummy_state.settings.nx = 10
@@ -127,6 +138,7 @@ def test_resize_dimension(dummy_state):
 
     assert dummy_state.dimensions["xt"] == 100
     assert dummy_state.variables.dxt.shape == (104,)
+    assert DIM_TO_SHAPE_VAR["xt"] == "nx"
 
 
 def test_timers(dummy_state):
