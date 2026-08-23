@@ -7,7 +7,6 @@ from veros import logger, runtime_settings, runtime_state, timer
 from veros.state import get_default_state, resize_dimension
 from veros.variables import get_shape
 
-
 # all variables that are re-named or unique to Veros
 VEROS_TO_PYOM_VAR = dict(
     # do not exist in pyom
@@ -21,6 +20,8 @@ VEROS_TO_PYOM_VAR = dict(
     line_dir_north_mask=None,
     line_dir_west_mask=None,
     ssh=None,
+    surface_freshwater_flux=None,
+    surface_salt_flux=None,
 )
 
 # all setting that are re-named or unique to Veros
@@ -37,6 +38,9 @@ VEROS_TO_PYOM_SETTING = dict(
     enable_Prandtl_tke=None,
     Prandtl_tke0=None,
     biharmonic_friction_cosPower=None,
+    rho_freshwater=None,
+    surface_salinity_reference=None,
+    enable_surface_freshwater_flux=None,
 )
 
 # these are read-only
