@@ -360,13 +360,13 @@ VARIABLES = {
     "dsalt_vmix": Variable(
         "Change of sal. by vertical mixing",
         T_GRID,
-        "deg C/s",
+        "g/(kg s)",
         "Change of salinity due to vertical mixing",
     ),
     "dsalt_hmix": Variable(
         "Change of sal. by horizontal mixing",
         T_GRID,
-        "deg C/s",
+        "g/(kg s)",
         "Change of salinity due to horizontal mixing",
     ),
     "dtemp_iso": Variable(
@@ -378,7 +378,7 @@ VARIABLES = {
     "dsalt_iso": Variable(
         "Change of sal. by isop. mixing",
         T_GRID,
-        "deg C/s",
+        "g/(kg s)",
         "Change of salinity due to isopycnal mixing plus skew mixing",
     ),
     "forc_temp_surface": Variable(
@@ -387,10 +387,24 @@ VARIABLES = {
         "m deg C/s",
         "Surface temperature flux",
     ),
+    "surface_freshwater_flux": Variable(
+        "Net surface freshwater mass flux",
+        T_HOR,
+        "kg/m^2/s",
+        "Net freshwater mass flux, positive into the ocean",
+        active=lambda settings: settings.enable_surface_freshwater_flux,
+    ),
+    "surface_salt_flux": Variable(
+        "Surface salt mass flux",
+        T_HOR,
+        "kg/m^2/s",
+        "Direct salt mass flux, positive into the ocean",
+        active=lambda settings: settings.enable_surface_freshwater_flux,
+    ),
     "forc_salt_surface": Variable(
         "Surface salinity flux",
         T_HOR,
-        "m g/s kg",
+        "m g/kg/s",
         "Surface salinity flux",
     ),
     "u": Variable("Zonal velocity", U_GRID + TIMESTEPS, "m/s", "Zonal velocity", write_to_restart=True),

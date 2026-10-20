@@ -146,6 +146,10 @@ SETTINGS = {
     "Prandtl_tke0": Setting(
         10.0, float, "Constant Prandtl number when stratification is neglected for kappaH computation in TKE routine"
     ),
+    # Coupled surface freshwater forcing
+    "rho_freshwater": Setting(1000.0, float, "Freshwater density in :math:`kg/m^3`"),
+    "surface_salinity_reference": Setting(34.7, float, "Reference salinity for virtual salt flux in :math:`g/kg`"),
+    "enable_surface_freshwater_flux": Setting(False, bool, "convert surface freshwater input to virtual salt flux"),
 }
 
 
