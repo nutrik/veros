@@ -3,7 +3,7 @@ from veros.core.operators import numpy as npx
 from veros import veros_routine, veros_kernel, KernelOutput
 from veros.distributed import global_sum
 from veros.variables import allocate
-from veros.core import advection, diffusion, isoneutral, density, utilities
+from veros.core import advection, diffusion, isoneutral, density, surface_forcing, utilities
 from veros.core.operators import update, update_add, at
 
 
@@ -435,6 +435,8 @@ def thermodynamics(state):
                 vs.P_diss_skew = update(vs.P_diss_skew, at[...], 0.0)
                 vs.update(isoneutral.isoneutral_skew_diffusion(state, tr=vs.temp, istemp=True))
                 vs.update(isoneutral.isoneutral_skew_diffusion(state, tr=vs.salt, istemp=False))
+
+    vs.update(surface_forcing.set_surface_freshwater_flux(state))
 
     with state.timers["vmix"]:
         vs.update(vertmix_tempsalt(state))
